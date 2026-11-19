@@ -35,6 +35,8 @@
                                     id-conectar="btnConectarSimuladorTaximetro"
                                     id-desconectar="btnDesconectarSimuladorTaximetro"
                                     id-csrf="csrf_tokenTaximetro" />
+
+
                             </div>
 
                             <!-- ── Panel de datos ── -->
@@ -397,4 +399,9 @@
             // }, 1500);
         }
     });
+</script>
+
+<script src="{{ asset('assets/data/simpresets.js') }}?v={{ time() }}"></script>
+<script>
+SimPresets.init({ key: 'taximetro' });
 </script>

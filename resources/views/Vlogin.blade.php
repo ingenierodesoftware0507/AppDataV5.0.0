@@ -25,10 +25,14 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: #0a0e1a;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
+            /* margin:auto en el wrapper centra sin recortar el contenido cuando no cabe */
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            justify-content: flex-start;
+            overflow-x: hidden;
+            overflow-y: auto;
             position: relative;
         }
 
@@ -81,6 +85,32 @@
             width: 100%;
             max-width: 440px;
             padding: 1.5rem;
+            margin: auto;
+        }
+
+        /* Pantallas bajas (móvil horizontal / pantalla dividida): compactar y no tapar el formulario con el badge */
+        @media (max-height: 640px) {
+            .card-glass {
+                padding: 1.25rem 1.25rem;
+            }
+
+            .brand {
+                margin-bottom: 1rem;
+            }
+
+            .brand-logo {
+                max-width: 180px;
+            }
+
+            .section-title {
+                margin-bottom: 1rem;
+            }
+
+            .version-info {
+                position: static;
+                display: inline-block;
+                margin: 0 auto 1rem;
+            }
         }
 
         .card-glass {

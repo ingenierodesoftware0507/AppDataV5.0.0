@@ -31,6 +31,8 @@
                                     id-conectar="btnConectarSimuladorLuces"
                                     id-desconectar="btnDesconectarSimuladorLuces"
                                     id-csrf="csrf_tokenLuces" />
+
+                                <x-sim-presets-bar norma="Baja ≥ 2.5 · inclinación 0.5 – 3.5%" :vehiculos="$tipovehiculo === 2 ? ['moto' => 'Motocicleta'] : ['automovil' => 'Automóvil', 'camioneta' => 'Camioneta / Campero', 'pickup' => 'Pick-up / Furgón', 'microbus' => 'Microbús / Bus', 'camion' => 'Camión']" :modelos="['2009' => '2009 y anteriores', '2010' => '2010 en adelante']" />
                             </div>
 
                             <div class="col-12 mb-4">
@@ -683,4 +685,27 @@
 
 
     });
+</script>
+
+<script src="{{ asset('assets/data/simpresets.js') }}?v={{ time() }}"></script>
+<script>
+SimPresets.init({
+    key: 'luces_' + document.getElementById('tipovehiculo').value,
+    exclude: ['modoLuxometro', 'modoInclinacion'],
+    aplicar: function (veh, mod) {
+        const base = { moto: 10, automovil: 18, camioneta: 20, pickup: 20, microbus: 22, camion: 24 }[veh] + (mod === '2010' ? 6 : 0);
+        const jit = [0, 0.8, -0.6];
+        const out = {};
+        ['derecha', 'izquierda'].forEach((lado, li) => {
+            [['baja', 1], ['alta', 2.2], ['anti', 0.5]].forEach(([tipo, f]) => {
+                jit.forEach((j, t) => {
+                    const sfx = t === 0 ? '' : '_' + t;
+                    out[tipo + '_' + lado + sfx] = Math.max(3, base * f + j + (li ? -0.4 : 0)).toFixed(2);
+                });
+            });
+            jit.forEach((j, t) => { out['baja_' + lado + (t === 0 ? '' : '_' + t) + '_inc'] = (1.5 + j * 0.3).toFixed(2); });
+        });
+        return out;
+    }
+});
 </script>
