@@ -30,6 +30,8 @@
                                     id-desconectar="btnDesconectarSimuladorFrenoMotos"
                                     id-csrf="csrf_tokenSonometro" />
 
+                                <x-sim-presets-bar norma="NTC 5385 · eficacia ≥ 30%" :vehiculos="['moto125' => 'Moto ≤ 125 cc', 'moto250' => 'Moto 126 – 250 cc', 'moto400' => 'Moto > 250 cc']" :modelos="['2009' => '2009 y anteriores', '2010' => '2010 en adelante']" />
+
                                 <!-- Tipo de Prueba -->
                                 <div class="col-12 mb-3">
                                     <div class="card">
@@ -475,4 +477,19 @@
             this.className = 'btn btn-success btn-sm w-10';
         });
     });
+</script>
+
+<script src="{{ asset('assets/data/simpresets.js') }}?v={{ time() }}"></script>
+<script>
+SimPresets.init({
+    key: 'frenos_moto',
+    aplicar: function (veh, mod) {
+        const peso = { moto125: [60, 110], moto250: [80, 140], moto400: [100, 180] }[veh];   // [eje1, eje2] kg
+        const efi = mod === '2010' ? 0.62 : 0.45;
+        return {
+            sim_pesaje_eje_1: peso[0], sim_pesaje_eje_2: peso[1],
+            sim_freno_eje_1: Math.round(peso[0] * efi * 1.15), sim_freno_eje_2: Math.round(peso[1] * efi * 0.9)
+        };
+    }
+});
 </script>

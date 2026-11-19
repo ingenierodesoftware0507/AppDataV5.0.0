@@ -20,6 +20,8 @@
                                     id-csrf="csrf_tokenSonometro"
                                     :mostrar-buscar="false" />
 
+                                <x-sim-presets-bar norma="Nivel de ruido ≤ 80 dB" :vehiculos="['automovil' => 'Automóvil', 'camioneta' => 'Camioneta / Campero', 'pickup' => 'Pick-up / Furgón', 'microbus' => 'Microbús / Bus', 'camion' => 'Camión', 'moto4t' => 'Moto 4 tiempos', 'moto2t' => 'Moto 2 tiempos']" :modelos="['2009' => '2009 y anteriores', '2010' => '2010 en adelante']" />
+
                                 <!-- Tipo de Prueba - Radio Buttons -->
                                 <div class="col-12 mb-3">
                                     <div class="card">
@@ -81,3 +83,17 @@
 </div>
 
 <x-instrucciones-simulador prueba="sonometría" :mostrar-buscar="false" />
+
+<script src="{{ asset('assets/data/simpresets.js') }}?v={{ time() }}"></script>
+<script>
+SimPresets.init({
+    key: 'sonometro',
+    aplicar: function (veh, mod) {
+        const base = { automovil: 72, camioneta: 74, pickup: 75, microbus: 77, camion: 78, moto4t: 74, moto2t: 77 }[veh];
+        const v = Math.min(80, base + (mod === '2009' ? 2 : 0));
+        const moto = veh.indexOf('moto') === 0;
+        const r = document.getElementById(moto ? 'pruebaPistaMotos' : 'pruebaPistaMixta');
+        return { valor_ruidoSonometro: v.toFixed(1) };
+    }
+});
+</script>

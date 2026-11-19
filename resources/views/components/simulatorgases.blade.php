@@ -22,6 +22,59 @@
                                 <!-- Necesario siempre (no solo cuando se muestra CRUCERO): iniciarCaptador() lo lee para saber si es prueba de motos -->
                                 <input type="hidden" id="tipovehiculo" value="{{ $tipovehiculo }}">
 
+                                <!-- Valores predefinidos NTC 4983 por vehículo y modelo -->
+                                <div class="col-12 mb-3">
+                                    <div class="card">
+                                        <div class="card-header">📋 Valores predefinidos (NTC 4983 / Res. 910)</div>
+                                        <div class="card-body">
+                                            <div class="row g-2 align-items-end">
+                                                <div class="col-12 col-md-4">
+                                                    <div class="form-floating">
+                                                        <select class="form-select" id="sim_preset_vehiculo">
+                                                            <option value="">-- Personalizado --</option>
+                                                            @if ($tipovehiculo === 2)
+                                                                <option value="moto4t">Moto 4 tiempos</option>
+                                                                <option value="moto2t">Moto 2 tiempos</option>
+                                                            @else
+                                                                <option value="automovil">Automóvil</option>
+                                                                <option value="camioneta">Camioneta / Campero</option>
+                                                                <option value="pickup">Pick-up / Furgón</option>
+                                                                <option value="microbus">Microbús / Buseta</option>
+                                                            @endif
+                                                        </select>
+                                                        <label for="sim_preset_vehiculo">Vehículo</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-4">
+                                                    <div class="form-floating">
+                                                        <select class="form-select" id="sim_preset_modelo">
+                                                            <option value="">-- Seleccione --</option>
+                                                            @if ($tipovehiculo !== 2)
+                                                                <option value="1984">1984 y anteriores</option>
+                                                                <option value="1997">1985 – 1997</option>
+                                                                <option value="2009">1998 – 2009</option>
+                                                                <option value="2010">2010 en adelante</option>
+                                                            @else
+                                                                <option value="2009">2009 y anteriores</option>
+                                                                <option value="2010">2010 en adelante</option>
+                                                            @endif
+                                                        </select>
+                                                        <label for="sim_preset_modelo">Modelo</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-4">
+                                                    <small class="text-muted d-block" id="sim_preset_info">
+                                                        Los valores cargados quedan dentro del límite de la norma. Puede editarlos.
+                                                    </small>
+                                                    <button type="button" id="btnLimpiarGuardado" class="btn btn-sm btn-outline-secondary mt-1">
+                                                        <i class="bi bi-arrow-counterclockwise"></i> Olvidar datos guardados
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Datos del Captador -->
                                 <div class="col-12 mb-3">
                                     <div class="card">

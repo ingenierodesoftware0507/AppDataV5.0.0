@@ -34,6 +34,8 @@
                                     id-desconectar="btnDesconectarSimuladorFrenoMotos"
                                     id-csrf="csrf_tokenSonometro" />
 
+                                <x-sim-presets-bar norma="NTC 4983 · eficacia ≥ 50%" :vehiculos="['automovil' => 'Automóvil', 'camioneta' => 'Camioneta / Campero', 'pickup' => 'Pick-up / Furgón', 'microbus' => 'Microbús / Buseta', 'camion' => 'Camión 2 ejes']" :modelos="['1997' => '1997 y anteriores', '2009' => '1998 – 2009', '2010' => '2010 en adelante']" />
+
                                 <!-- Tipo de Prueba - Radio Buttons -->
                                 <div class="col-12 mb-3">
                                     <div class="card">
@@ -956,4 +958,33 @@
 
 
     });
+</script>
+
+<script src="{{ asset('assets/data/simpresets.js') }}?v={{ time() }}"></script>
+<script>
+SimPresets.init({
+    key: 'frenos_mixto',
+    aplicar: function (veh, mod) {
+        // Peso por rueda [eje1, eje2] en kg
+        const pesos = { automovil: [258, 196], camioneta: [338, 298], pickup: [378, 415], microbus: [595, 890], camion: [1490, 2780] };
+        const efi = { 1997: 0.56, 2009: 0.63, 2010: 0.70 }[mod];   // eficacia objetivo (mín. 50%)
+        const p = pesos[veh];
+        const out = {};
+        for (let i = 1; i <= 5; i++) {
+            ['izq', 'der'].forEach(l => { out['sim_pesaje_eje_' + i + '_' + l] = ''; out['sim_freno_eje_' + i + '_' + l] = ''; });
+            out['sim_alineacion_eje_' + i] = '';
+        }
+        p.forEach((w, idx) => {
+            const e = idx + 1;
+            out['sim_pesaje_eje_' + e + '_izq'] = w + 1; out['sim_pesaje_eje_' + e + '_der'] = w;
+            const f = Math.round(w * efi * (e === 1 ? 1.08 : 0.95));   // el eje delantero frena más
+            out['sim_freno_eje_' + e + '_izq'] = f; out['sim_freno_eje_' + e + '_der'] = Math.round(f * 0.96);
+            out['sim_alineacion_eje_' + e] = (e === 1 ? 4.5 : 5.5);
+        });
+        const total = p.reduce((a, b) => a + b * 2, 0);
+        const aux = Math.round(total * 0.14);   // auxiliar ≥ 18% entre ambos lados
+        out.sim_fuerza_aux_izq = aux; out.sim_fuerza_aux_der = Math.round(aux * 0.98);
+        return out;
+    }
+});
 </script>

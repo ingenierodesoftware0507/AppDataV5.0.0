@@ -23,6 +23,8 @@
                                     id-csrf="csrf_token"
                                     :small="true" />
 
+                                <x-sim-presets-bar norma="NTC 4231 / Res. 910" :vehiculos="['liviano' => 'Liviano (PBV ≤ 5000 kg)', 'pesado' => 'Pesado (PBV > 5000 kg)']" :modelos="['2000' => '2000 y anteriores', '2015' => '2001 – 2015', '2016' => '2016 en adelante']" />
+
                                 <!-- Datos del Captador -->
                                 <div class="col-12 mb-2">
                                     <div class="card">
@@ -473,4 +475,24 @@
     $(document).ready(function() {
         setBotonesConectado(false);
     });
+</script>
+
+<script src="{{ asset('assets/data/simpresets.js') }}?v={{ time() }}"></script>
+<script>
+SimPresets.init({
+    key: 'opacidad',
+    aplicar: function (veh, mod) {
+        // Límites k (m⁻¹): liviano 4.5/3.5/2.5 · pesado 4.0/3.0/2.0 → se usa ~55% del límite
+        const lim = { liviano: { 2000: 4.5, 2015: 3.5, 2016: 2.5 }, pesado: { 2000: 4.0, 2015: 3.0, 2016: 2.0 } };
+        const L = parseFloat(document.getElementById('inputGroupSelect01').value) || 0.215;
+        const k = lim[veh][mod] * 0.55;
+        const n = 100 * (1 - Math.exp(-k * L));
+        return {
+            sim_opacidad1_ralentiOpacimetro: n.toFixed(1),
+            sim_rpm_ralentiOpacimetro: veh === 'pesado' ? 700 : 850,
+            sim_rpm_cruceroOpacimetro: veh === 'pesado' ? 2000 : 2500
+        };
+    },
+    info: function (veh, mod) { return 'Preset aplicado (opacidad al ~55% del límite). Pulse Calcular para ver k.'; }
+});
 </script>
