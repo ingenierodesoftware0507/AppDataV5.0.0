@@ -78,6 +78,8 @@ Route::middleware('sesion')->group(function () {
     Route::post('/buscarvehiculo', [Cprincipal::class, 'getVehiculo']);
 
     Route::post('/getMaquina', [Cprincipal::class, 'getMaquina']);
+    // Periféricos asociados a un equipo de gases u opacidad (SPEC 08)
+    Route::post('/getperifericos', [Cprincipal::class, 'getPerifericos'])->middleware('modulo:gase,gasem,opac');
     Route::post('/getActualizacion', [Cactualizar::class, 'getActualizacion'])->middleware('modulo:actu');
     Route::post('/getCalibracion', [Calibracion::class, 'getCalibracion'])->middleware('modulo:cal');
 

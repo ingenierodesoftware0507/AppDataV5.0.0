@@ -45,6 +45,7 @@
                                         @endif
 
                                         <x-vehicle-selector :placas="$placas" :usuarios="$usuarios" :maquinas="$maquinas" />
+                                        <x-perifericos-selector grupo="livianos" />
 
                                         <div class="row">
                                             <div class="col-12 col-md-6 col-lg-3">
