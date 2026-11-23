@@ -9,6 +9,25 @@
         --niebla: #0E9AA7;
         --niebla-bg: #E6F6F7;
     }
+
+    /* Modal de diagnóstico del luxómetro (estilo consola) */
+    #modalDiagnosticoLuxometro .modal-content { background:#0d1117; color:#c9d1d9; border:1px solid #30363d; }
+    #modalDiagnosticoLuxometro .modal-header,
+    #modalDiagnosticoLuxometro .modal-footer { border-color:#30363d; }
+    #modalDiagnosticoLuxometro .modal-title { font-family:Consolas,'Courier New',monospace; font-size:1rem; }
+    #consolaDiagnosticoLuxometro {
+        font-family:Consolas,'Courier New',monospace; font-size:.85rem; line-height:1.5;
+        min-height:260px; max-height:55vh; overflow:auto; padding:6px 2px; white-space:pre-wrap; word-break:break-word;
+    }
+    #consolaDiagnosticoLuxometro .dx-l { margin:0; }
+    #consolaDiagnosticoLuxometro .dx-ts { color:#6e7681; }
+    #consolaDiagnosticoLuxometro .dx-info { color:#58a6ff; }
+    #consolaDiagnosticoLuxometro .dx-ok { color:#3fb950; }
+    #consolaDiagnosticoLuxometro .dx-warn { color:#d29922; }
+    #consolaDiagnosticoLuxometro .dx-err { color:#f85149; }
+    #consolaDiagnosticoLuxometro .dx-dim { color:#8b949e; }
+    #consolaDiagnosticoLuxometro .dx-cursor::after { content:'\2588'; animation:dxBlink 1s steps(1) infinite; }
+    @keyframes dxBlink { 50% { opacity:0; } }
 </style>
 
 <div class="container">
@@ -58,6 +77,10 @@
                                                 <option value="aleatoria">Aleatoria</option>
                                                 <option value="manual">Manual</option>
                                             </select>
+                                            <!-- Diagnóstico de la comunicación con el luxómetro real -->
+                                            <button type="button" id="btnDiagnosticoLuxometro" class="btn btn-sm btn-outline-dark">
+                                                <i class="bi bi-terminal"></i> Diagnóstico
+                                            </button>
                                         </div>
                                     </div>
 
@@ -312,6 +335,31 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: diagnóstico del luxómetro (consola) -->
+<div class="modal fade" id="modalDiagnosticoLuxometro" tabindex="-1" aria-labelledby="tituloDiagnosticoLuxometro" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloDiagnosticoLuxometro"><i class="bi bi-terminal"></i> Diagnóstico del luxómetro · {{ $nombreprueba }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="consolaDiagnosticoLuxometro" role="log" aria-live="polite"></div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="form-check text-light small">
+                    <input class="form-check-input" type="checkbox" id="dxAuto">
+                    <label class="form-check-label" for="dxAuto">Actualizar cada 5 s</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-light" id="dxCopiar"><i class="bi bi-clipboard"></i> Copiar</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="dxEjecutar"><i class="bi bi-arrow-repeat"></i> Diagnosticar</button>
                 </div>
             </div>
         </div>
@@ -685,6 +733,130 @@
 
 
     });
+</script>
+
+<script>
+    // ─── Diagnóstico del luxómetro (consola) ────────────────────────────────
+    // Consulta GET {URL_BASE}lucesmixta/diagnostico de appdatamachine, que revisa
+    // el puente entre la app y el luxómetro real.
+    (function() {
+        const modalEl = document.getElementById('modalDiagnosticoLuxometro');
+        const consola = document.getElementById('consolaDiagnosticoLuxometro');
+        const btnEjecutar = document.getElementById('dxEjecutar');
+        const chkAuto = document.getElementById('dxAuto');
+        let modal = null;
+        let timer = null;
+        let ejecutando = false;
+
+        const hora = () => new Date().toLocaleTimeString('es-CO', { hour12: false });
+        const hace = t => t ? Math.round((Date.now() - t) / 1000) + ' s' : 'nunca';
+
+        function linea(texto, clase) {
+            const div = document.createElement('div');
+            div.className = 'dx-l';
+            const ts = document.createElement('span');
+            ts.className = 'dx-ts';
+            ts.textContent = '[' + hora() + '] ';
+            const msg = document.createElement('span');
+            if (clase) msg.className = 'dx-' + clase;
+            msg.textContent = texto;
+            div.append(ts, msg);
+            consola.appendChild(div);
+            consola.scrollTop = consola.scrollHeight;
+        }
+
+        function pintar(d) {
+            const clase = { ok: 'ok', advertencia: 'warn', error: 'err' }[d.estado] || 'info';
+            const etiqueta = { ok: 'CORRECTO', advertencia: 'ATENCIÓN', error: 'FALLA' }[d.estado] || d.estado;
+            linea(`Resultado: ${etiqueta}`, clase);
+            linea(`Causa: ${d.causa}`, clase);
+            linea(`Qué hacer: ${d.recomendacion}`, 'info');
+            linea('── detalle técnico ──', 'dim');
+            linea(`Puerto local: ${d.puerto}`, 'dim');
+            if (d.destino) linea(`Equipo real: ${d.destino.ip}:${d.destino.puerto}`, 'dim');
+            linea(`Simulación activa: ${d.simulando ? 'sí' : 'no'}`, d.simulando ? 'warn' : 'dim');
+            const s = d.salud;
+            if (s) {
+                linea(`App conectada al puente: ${s.appConectada ? 'sí' : 'no'}`, 'dim');
+                linea(`Equipo conectado: ${s.equipoConectado ? 'sí' : 'no'}`, s.equipoConectado ? 'dim' : 'warn');
+                linea(`Último dato del equipo: hace ${hace(s.ultimoDatoEquipo)}`, 'dim');
+                linea(`Último dato de la app: hace ${hace(s.ultimoDatoApp)}`, 'dim');
+                linea(`Bytes equipo→app: ${s.bytesEquipo} · app→equipo: ${s.bytesApp}`, 'dim');
+                linea(`Reconexiones: ${s.reconexiones}`, s.reconexiones >= 3 ? 'warn' : 'dim');
+                if (s.ultimoError) {
+                    linea(`Último error: ${s.ultimoError.codigo} (hace ${hace(s.ultimoError.fecha)}) ${s.ultimoError.mensaje}`, 'warn');
+                }
+            }
+        }
+
+        async function diagnosticar() {
+            if (ejecutando) return;
+            ejecutando = true;
+            btnEjecutar.disabled = true;
+            consola.textContent = '';
+            const tipo = document.getElementById('tipovehiculo').value;
+            linea(`$ diagnostico luxometro --tipo=${tipo == 2 ? 'motos' : 'mixta'}`, 'info');
+            linea(`Consultando ${URL_BASE}lucesmixta/diagnostico ...`, 'dim');
+            try {
+                const ctrl = new AbortController();
+                const corte = setTimeout(() => ctrl.abort(), 8000);
+                const res = await fetch(`${URL_BASE}lucesmixta/diagnostico?tipovehiculo=${tipo}`, { cache: 'no-store', signal: ctrl.signal });
+                clearTimeout(corte);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const lista = await res.json();
+                if (!Array.isArray(lista) || !lista.length) throw new Error('respuesta vacía');
+                pintar(lista[0]);
+            } catch (e) {
+                const motivo = e.name === 'AbortError' ? 'tiempo de espera agotado (8 s)' : e.message;
+                linea(`Resultado: FALLA`, 'err');
+                linea(`No se pudo consultar el servicio appdatamachine: ${motivo}`, 'err');
+                linea('Qué hacer: verifique que el servicio esté en ejecución en el servidor (pm2 status) y que la red funcione.', 'info');
+            } finally {
+                const fin = document.createElement('div');
+                fin.className = 'dx-l dx-dim dx-cursor';
+                fin.textContent = '$ ';
+                consola.appendChild(fin);
+                consola.scrollTop = consola.scrollHeight;
+                ejecutando = false;
+                btnEjecutar.disabled = false;
+            }
+        }
+
+        function detenerAuto() {
+            clearInterval(timer);
+            timer = null;
+            chkAuto.checked = false;
+        }
+
+        document.getElementById('btnDiagnosticoLuxometro').addEventListener('click', function() {
+            // Se mueve al <body>: dentro de la página hereda transformaciones (AOS) que descuadran el modal.
+            if (modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+            if (!modal) modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+        modalEl.addEventListener('shown.bs.modal', diagnosticar);
+        modalEl.addEventListener('hidden.bs.modal', detenerAuto);
+        btnEjecutar.addEventListener('click', diagnosticar);
+        chkAuto.addEventListener('change', function() {
+            clearInterval(timer);
+            timer = this.checked ? setInterval(diagnosticar, 5000) : null;
+        });
+        document.getElementById('dxCopiar').addEventListener('click', function() {
+            const texto = consola.innerText;
+            const ok = () => Toast.fire({ icon: 'success', title: 'Diagnóstico copiado' });
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(texto).then(ok);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = texto;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+                ok();
+            }
+        });
+    })();
 </script>
 
 <script src="{{ asset('assets/data/simpresets.js') }}?v={{ time() }}"></script>
