@@ -27,7 +27,10 @@ class VerificarSesion
         session(['licencia' => $licencia + ['dominio' => $sesionLicencia['dominio'], 'mac' => $sesionLicencia['mac']]]);
 
         if (!$licencia['permitido']) {
-            session()->forget('sesionUser');
+            // Sin conexión se rechaza la petición pero se conserva la sesión (es un fallo temporal)
+            if ($licencia['motivo'] !== 'sin_conexion') {
+                session()->forget('sesionUser');
+            }
             return $this->rechazar($request, 403, $licencia['mensaje']);
         }
 
@@ -40,6 +43,8 @@ class VerificarSesion
             return response()->json(['message' => $mensaje], $codigo);
         }
 
-        return redirect('/')->with('error', $mensaje);
+        // Los bloqueos de licencia (403) ya los muestra el login al validarla: no se repite el mensaje
+        $redireccion = redirect('/');
+        return $codigo === 403 ? $redireccion : $redireccion->with('error', $mensaje);
     }
 }
