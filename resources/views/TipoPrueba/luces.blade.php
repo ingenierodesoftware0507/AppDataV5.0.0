@@ -692,7 +692,6 @@
                                 $("#sum_bajas").prop('checked', optLuxV[0] === 1);
                                 $("#sum_altas").prop('checked', optLuxV[1] === 1);
                                 $("#sum-anti").prop('checked', optLuxV[2] === 1);
-                                $("select[name='selSimultanea']").val(optLuxV.some(function(d) { return d === 1; }) ? '1' : '0');
                             }
                         });
                     } else {
